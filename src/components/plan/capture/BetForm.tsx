@@ -11,6 +11,7 @@ export function BetForm({ onDone }: BetFormProps) {
   const { addBet, bets } = useBetStore()
   const [title, setTitle] = useState('')
   const [reward, setReward] = useState('')
+  const [consequence, setConsequence] = useState('')
   const [certainty, setCertainty] = useState(0.5)
   const [intrinsicImpact, setIntrinsicImpact] = useState(0.5)
   const [parentBetId, setParentBetId] = useState('')
@@ -23,6 +24,7 @@ export function BetForm({ onDone }: BetFormProps) {
     addBet({
       title: title.trim(),
       reward: reward.trim(),
+      consequence: consequence.trim() || undefined,
       certainty,
       intrinsic_impact: intrinsicImpact,
       parent_bet_id: parentBetId || undefined,
@@ -43,13 +45,23 @@ export function BetForm({ onDone }: BetFormProps) {
         />
       </FormField>
 
-      <FormField label="Reward" hint="The feeling or outcome you're betting on.">
+      <FormField label="🏆 Reward" hint="The feeling or outcome you're betting on.">
         <textarea
           className={textareaClass}
           rows={2}
           placeholder="What does winning feel like?"
           value={reward}
           onChange={e => setReward(e.target.value)}
+        />
+      </FormField>
+
+      <FormField label="✊ If Not" hint="What happens if you don't do this?">
+        <textarea
+          className={textareaClass}
+          rows={2}
+          placeholder="What do you lose by not acting?"
+          value={consequence}
+          onChange={e => setConsequence(e.target.value)}
         />
       </FormField>
 

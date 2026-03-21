@@ -4,6 +4,7 @@ export interface Bet {
   id: string
   title: string
   reward: string
+  consequence?: string       // what happens if you don't
   certainty: number          // 0–1
   intrinsic_impact: number   // 0–1
   parent_bet_id?: string

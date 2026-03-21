@@ -1,5 +1,6 @@
 import { useAppStore } from '@/store/useAppStore'
 import { CaptureView } from './capture/CaptureView'
+import { BattlefieldView } from './battlefield/BattlefieldView'
 import type { PlanStage } from '@/lib/types'
 
 const STAGES: { id: PlanStage; label: string }[] = [
@@ -34,7 +35,7 @@ export function PlanView() {
       {/* Stage content */}
       <div className="flex-1 border-t border-white/10 overflow-hidden">
         {planStage === 'capture' && <CaptureView />}
-        {planStage === 'battlefield' && <StageStub label="BATTLEFIELD" description="See your bets as pieces on a living map." sprint="Sprint 2" />}
+        {planStage === 'battlefield' && <BattlefieldView />}
         {planStage === 'campaign' && <StageStub label="CAMPAIGN" description="Build your queue. Schedule what matters." sprint="Sprint 3" />}
       </div>
     </div>
