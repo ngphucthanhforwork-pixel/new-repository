@@ -1,10 +1,11 @@
 import { useAppStore } from '@/store/useAppStore'
+import { CaptureView } from './capture/CaptureView'
 import type { PlanStage } from '@/lib/types'
 
-const STAGES: { id: PlanStage; label: string; description: string }[] = [
-  { id: 'capture', label: 'CAPTURE', description: 'Dump your thoughts. Assign bets, tasks, habits.' },
-  { id: 'battlefield', label: 'BATTLEFIELD', description: 'See your bets as pieces on a living map.' },
-  { id: 'campaign', label: 'CAMPAIGN', description: 'Build your queue. Schedule what matters.' },
+const STAGES: { id: PlanStage; label: string }[] = [
+  { id: 'capture', label: 'CAPTURE' },
+  { id: 'battlefield', label: 'BATTLEFIELD' },
+  { id: 'campaign', label: 'CAMPAIGN' },
 ]
 
 export function PlanView() {
@@ -32,20 +33,20 @@ export function PlanView() {
 
       {/* Stage content */}
       <div className="flex-1 border-t border-white/10 overflow-hidden">
-        {planStage === 'capture' && <StageStub label="CAPTURE" description={STAGES[0].description} />}
-        {planStage === 'battlefield' && <StageStub label="BATTLEFIELD" description={STAGES[1].description} />}
-        {planStage === 'campaign' && <StageStub label="CAMPAIGN" description={STAGES[2].description} />}
+        {planStage === 'capture' && <CaptureView />}
+        {planStage === 'battlefield' && <StageStub label="BATTLEFIELD" description="See your bets as pieces on a living map." sprint="Sprint 2" />}
+        {planStage === 'campaign' && <StageStub label="CAMPAIGN" description="Build your queue. Schedule what matters." sprint="Sprint 3" />}
       </div>
     </div>
   )
 }
 
-function StageStub({ label, description }: { label: string; description: string }) {
+function StageStub({ label, description, sprint }: { label: string; description: string; sprint: string }) {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
       <span className="text-xs font-mono tracking-widest text-white/20">{label}</span>
       <p className="text-sm font-mono text-white/40 max-w-xs">{description}</p>
-      <span className="text-xs font-mono text-white/15 mt-4">Sprint coming soon</span>
+      <span className="text-xs font-mono text-white/15 mt-4">{sprint}</span>
     </div>
   )
 }

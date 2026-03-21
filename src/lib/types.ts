@@ -15,12 +15,13 @@ export interface Bet {
 export interface Task {
   id: string
   title: string
-  bet_id: string
+  bet_id?: string            // optional when parked/unprocessed
   objectives: string[]
   estimated_time: number     // minutes
   certainty: number          // 0–1
   intrinsic_impact: number   // 0–1
   status: 'queued' | 'active' | 'completed'
+  unprocessed?: boolean      // captured without bet assignment
   createdAt: string
 }
 
@@ -28,11 +29,12 @@ export interface Habit {
   id: string
   title: string
   type: 'proactive' | 'maintenance'
-  parent_id: string          // bet ID or area ID
+  parent_id?: string         // bet ID or area ID; optional when parked
   recurrence: number         // hours
   certainty?: number         // proactive only
   intrinsic_impact?: number  // proactive only
   status: 'active' | 'dimmed' | 'paused'
+  unprocessed?: boolean      // captured without parent assignment
   last_completed_at?: string
   next_due_at: string
 }
