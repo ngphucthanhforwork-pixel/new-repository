@@ -1,190 +1,158 @@
-import { useState } from 'react'
-import { useBetStore } from '@/store/useBetStore'
-import { useTaskStore } from '@/store/useTaskStore'
-import { useHabitStore } from '@/store/useHabitStore'
-import { computeChessRank, computeCumulativeScore } from '@/lib/scoring'
+import { useRef, useState } from 'react'
 import { CapturePanel } from './CapturePanel'
-import { UnprocessedList } from './UnprocessedList'
+import { BattlefieldMinimap } from '@/components/plan/battlefield/BattlefieldMinimap'
+
+const GHOST_LINES = [
+  "What are you betting on?",
+  "What happens if you don't?",
+]
 
 export function CaptureView() {
+  const [text, setText] = useState('')
   const [panelOpen, setPanelOpen] = useState(false)
-  const { bets, updateBet } = useBetStore()
-  const { tasks } = useTaskStore()
-  const { habits } = useHabitStore()
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const activeBets = bets.filter(b => b.status === 'active')
-  const rootBets = activeBets.filter(b => !b.parent_bet_id)
+  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
+  const isEmpty = text.length === 0
+
+  function openCapture() {
+    setPanelOpen(true)
+  }
+
+  function onPanelClose() {
+    setPanelOpen(false)
+    // Refocus notepad after capture
+    setTimeout(() => textareaRef.current?.focus(), 50)
+  }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 shrink-0">
-        <div className="flex items-center gap-4">
-          <span className="text-xs font-mono text-white/30 tracking-widest">INTELLIGENCE</span>
-          <span className="text-xs font-mono text-white/15">
-            {bets.length} bets · {tasks.length} tasks · {habits.length} habits
-          </span>
-        </div>
-        <button
-          onClick={() => setPanelOpen(true)}
-          className="flex items-center gap-2 px-4 py-1.5 text-xs font-mono tracking-widest
-            border border-amber/40 text-amber bg-amber/5 hover:bg-amber/15 transition-colors"
-        >
-          + CAPTURE
-        </button>
-      </div>
-
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-6 py-5">
-        {/* Unprocessed banner */}
-        <UnprocessedList />
-
-        {/* Empty state */}
-        {bets.length === 0 && tasks.length === 0 && habits.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-            <span className="text-4xl opacity-20">♚</span>
-            <p className="text-sm font-mono text-white/30 max-w-xs">
-              Nothing here yet. Start by placing your first bet — a hypothesis you want to test.
-            </p>
-            <button
-              onClick={() => setPanelOpen(true)}
-              className="mt-2 px-6 py-2 text-xs font-mono tracking-widest border border-amber/40
-                text-amber bg-amber/5 hover:bg-amber/15 transition-colors"
-            >
-              + PLACE FIRST BET
-            </button>
-          </div>
-        )}
-
-        {/* Bet tree */}
-        {rootBets.length > 0 && (
-          <div className="flex flex-col gap-3">
-            {rootBets.map(bet => (
-              <BetRow key={bet.id} betId={bet.id} depth={0} />
+    <div className="flex h-full overflow-hidden">
+      {/* ── Left: Notepad ───────────────────────────────────────────── */}
+      <div
+        className="relative flex-1 flex flex-col overflow-hidden"
+        style={{ background: '#060a11' }}
+        onClick={() => textareaRef.current?.focus()}
+      >
+        {/* Ghost prompt — visible only when empty */}
+        {isEmpty && (
+          <div
+            className="absolute pointer-events-none select-none"
+            style={{
+              top: '15%',
+              left: 0,
+              right: 0,
+              padding: '0 64px',
+            }}
+          >
+            {GHOST_LINES.map((line, i) => (
+              <p
+                key={i}
+                className="font-mono leading-loose"
+                style={{
+                  fontSize: 18,
+                  color: `rgba(255,255,255,${i === 0 ? 0.06 : 0.035})`,
+                  marginBottom: i === 0 ? 4 : 0,
+                }}
+              >
+                {line}
+              </p>
             ))}
           </div>
         )}
 
-        {/* Paused / killed bets */}
-        {bets.filter(b => b.status === 'paused' || b.status === 'killed').length > 0 && (
-          <div className="mt-8">
-            <div className="text-xs font-mono text-white/20 tracking-widest mb-3">INACTIVE</div>
-            <div className="flex flex-col gap-2">
-              {bets.filter(b => b.status === 'paused' || b.status === 'killed').map(bet => (
-                <div key={bet.id} className="flex items-center gap-3 px-3 py-2 bg-white/3 border border-white/5 rounded opacity-40">
-                  <span className="text-sm">{computeChessRank(bet, bets)}</span>
-                  <span className="text-xs font-mono text-white/60 flex-1">{bet.title}</span>
-                  <span className="text-[10px] font-mono text-white/30">{bet.status.toUpperCase()}</span>
-                  {bet.status === 'paused' && (
-                    <button
-                      onClick={() => updateBet(bet.id, { status: 'active', last_active_at: new Date().toISOString() })}
-                      className="text-[10px] font-mono text-amber/60 hover:text-amber transition-colors"
-                    >
-                      RESUME
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Textarea */}
+        <textarea
+          ref={textareaRef}
+          className="flex-1 w-full bg-transparent resize-none outline-none font-mono text-white/80 leading-relaxed"
+          style={{
+            fontSize: 16,
+            lineHeight: 1.9,
+            padding: '12% 64px 40px',
+            caretColor: '#e8a045',
+          }}
+          value={text}
+          onChange={e => setText(e.target.value)}
+          spellCheck={false}
+          autoFocus
+        />
+
+        {/* Bottom status bar */}
+        <div
+          className="shrink-0 flex items-center justify-between px-16 py-3 border-t"
+          style={{ borderColor: 'rgba(255,255,255,0.04)' }}
+        >
+          <span
+            className="font-mono text-[10px] transition-opacity"
+            style={{ color: 'rgba(255,255,255,0.18)' }}
+          >
+            {isEmpty
+              ? 'braindump freely'
+              : `${wordCount} word${wordCount !== 1 ? 's' : ''}`}
+          </span>
+          {!isEmpty && (
+            <button
+              onClick={() => setText('')}
+              className="font-mono text-[10px] transition-colors"
+              style={{ color: 'rgba(255,255,255,0.12)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.35)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.12)')}
+            >
+              clear
+            </button>
+          )}
+        </div>
       </div>
 
-      <CapturePanel open={panelOpen} onClose={() => setPanelOpen(false)} />
-    </div>
-  )
-}
+      {/* ── Right: Minimap + Capture ─────────────────────────────────── */}
+      <div
+        className="w-64 flex flex-col shrink-0 border-l"
+        style={{ background: '#07101a', borderColor: 'rgba(255,255,255,0.06)' }}
+      >
+        {/* Minimap */}
+        <div className="flex-1 overflow-hidden">
+          <BattlefieldMinimap />
+        </div>
 
-// Recursive bet row component
-function BetRow({ betId, depth }: { betId: string; depth: number }) {
-  const [expanded, setExpanded] = useState(depth === 0)
-  const { bets, updateBet } = useBetStore()
-  const { tasks } = useTaskStore()
-  const { habits } = useHabitStore()
-
-  const bet = bets.find(b => b.id === betId)
-  if (!bet) return null
-
-  const children = bets.filter(b => b.parent_bet_id === betId && b.status === 'active')
-  const betTasks = tasks.filter(t => t.bet_id === betId && !t.unprocessed)
-  const betHabits = habits.filter(h => h.parent_id === betId && !h.unprocessed)
-  const rank = computeChessRank(bet, bets)
-  const score = computeCumulativeScore(bet, bets)
-  const hasChildren = children.length > 0 || betTasks.length > 0 || betHabits.length > 0
-
-  return (
-    <div style={{ marginLeft: depth * 20 }}>
-      <div className="flex items-center gap-2 px-3 py-2.5 bg-white/3 border border-white/8 rounded group hover:border-white/15 transition-colors">
-        {/* Expand toggle */}
-        {hasChildren ? (
+        {/* Capture button */}
+        <div
+          className="shrink-0 p-4 border-t"
+          style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+        >
           <button
-            onClick={() => setExpanded(e => !e)}
-            className="text-white/20 hover:text-white/60 text-xs w-4 shrink-0 transition-colors"
-          >
-            {expanded ? '▾' : '▸'}
-          </button>
-        ) : (
-          <span className="w-4 shrink-0" />
-        )}
-
-        <span className="text-base shrink-0">{rank}</span>
-        <span className="text-sm font-mono text-white/80 flex-1 truncate">{bet.title}</span>
-
-        <span className="text-xs font-mono text-amber/60 tabular-nums shrink-0">
-          {score.toFixed(2)}
-        </span>
-
-        {/* Actions (show on hover) */}
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          <button
-            onClick={() => updateBet(bet.id, { status: 'paused' })}
-            className="text-[10px] font-mono text-white/30 hover:text-white/60 px-1.5 py-0.5 border border-white/10 transition-colors"
-          >
-            PAUSE
-          </button>
-          <button
-            onClick={() => {
-              if (confirm(`Kill "${bet.title}"? This cannot be undone.`)) {
-                updateBet(bet.id, { status: 'killed' })
-              }
+            onClick={openCapture}
+            className="w-full py-3 font-mono text-xs tracking-widest border transition-colors"
+            style={{
+              borderColor: 'rgba(232,160,69,0.4)',
+              color: '#e8a045',
+              background: 'rgba(232,160,69,0.04)',
             }}
-            className="text-[10px] font-mono text-white/20 hover:text-red-400/60 px-1.5 py-0.5 border border-white/10 transition-colors"
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(232,160,69,0.12)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(232,160,69,0.04)'
+            }}
           >
-            KILL
+            CAPTURE →
           </button>
+
+          {!isEmpty && (
+            <p
+              className="text-center font-mono mt-2"
+              style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)' }}
+            >
+              {wordCount}w ready to structure
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Children */}
-      {expanded && (
-        <div className="mt-1 flex flex-col gap-1">
-          {children.map(child => (
-            <BetRow key={child.id} betId={child.id} depth={depth + 1} />
-          ))}
-          {betTasks.map(task => (
-            <div
-              key={task.id}
-              className="flex items-center gap-2 px-3 py-1.5 border border-white/5 rounded"
-              style={{ marginLeft: (depth + 1) * 20 }}
-            >
-              <span className="text-[10px] font-mono text-white/25 w-8 shrink-0">TASK</span>
-              <span className="text-xs font-mono text-white/50 flex-1 truncate">{task.title}</span>
-              <span className="text-[10px] font-mono text-white/20">{task.estimated_time}m</span>
-            </div>
-          ))}
-          {betHabits.map(habit => (
-            <div
-              key={habit.id}
-              className="flex items-center gap-2 px-3 py-1.5 border border-white/5 rounded"
-              style={{ marginLeft: (depth + 1) * 20 }}
-            >
-              <span className="text-[10px] font-mono text-teal/40 w-8 shrink-0">HAB</span>
-              <span className="text-xs font-mono text-white/50 flex-1 truncate">{habit.title}</span>
-              <span className="text-[10px] font-mono text-white/20">{habit.recurrence_hours}h</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Capture panel (slide-in form) */}
+      <CapturePanel
+        open={panelOpen}
+        onClose={onPanelClose}
+        initialTitle={text.trim()}
+      />
     </div>
   )
 }

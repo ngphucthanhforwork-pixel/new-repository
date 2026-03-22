@@ -5,11 +5,12 @@ import { ScoreSlider } from '@/components/ui/ScoreSlider'
 
 interface BetFormProps {
   onDone: () => void
+  initialTitle?: string
 }
 
-export function BetForm({ onDone }: BetFormProps) {
+export function BetForm({ onDone, initialTitle = '' }: BetFormProps) {
   const { addBet, bets } = useBetStore()
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState(initialTitle)
   const [reward, setReward] = useState('')
   const [consequence, setConsequence] = useState('')
   const [certainty, setCertainty] = useState(0.5)

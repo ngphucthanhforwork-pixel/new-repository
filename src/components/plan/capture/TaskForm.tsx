@@ -6,12 +6,13 @@ import { ScoreSlider } from '@/components/ui/ScoreSlider'
 
 interface TaskFormProps {
   onDone: () => void
+  initialTitle?: string
 }
 
-export function TaskForm({ onDone }: TaskFormProps) {
+export function TaskForm({ onDone, initialTitle = '' }: TaskFormProps) {
   const { addTask } = useTaskStore()
   const { bets } = useBetStore()
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState(initialTitle)
   const [betId, setBetId] = useState('')
   const [objectives, setObjectives] = useState<string[]>([''])
   const [estimatedTime, setEstimatedTime] = useState(30)

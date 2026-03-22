@@ -16,9 +16,10 @@ const TYPES: { id: EntityType; label: string; description: string; color: string
 interface CapturePanelProps {
   open: boolean
   onClose: () => void
+  initialTitle?: string
 }
 
-export function CapturePanel({ open, onClose }: CapturePanelProps) {
+export function CapturePanel({ open, onClose, initialTitle = '' }: CapturePanelProps) {
   const [activeType, setActiveType] = useState<EntityType>('bet')
 
   return (
@@ -66,8 +67,8 @@ export function CapturePanel({ open, onClose }: CapturePanelProps) {
 
         {/* Form body */}
         <div className="flex-1 overflow-y-auto px-5 py-5">
-          {activeType === 'bet' && <BetForm onDone={onClose} />}
-          {activeType === 'task' && <TaskForm onDone={onClose} />}
+          {activeType === 'bet' && <BetForm onDone={onClose} initialTitle={initialTitle} />}
+          {activeType === 'task' && <TaskForm onDone={onClose} initialTitle={initialTitle} />}
           {activeType === 'habit' && <HabitForm onDone={onClose} />}
           {activeType === 'area' && <AreaForm onDone={onClose} />}
         </div>
