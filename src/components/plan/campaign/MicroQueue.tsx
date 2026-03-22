@@ -12,7 +12,7 @@ export function MicroQueue() {
 
   // Tasks from bets in the grand queue that haven't been completed
   const eligibleTasks = tasks.filter(
-    t => t.bet_id && grandQueue.includes(t.bet_id) && t.status !== 'completed' && !t.unprocessed
+    t => t.bet_id && grandQueue.includes(t.bet_id) && t.status !== 'done' && !t.unprocessed
   )
 
   const queued = microQueue
@@ -24,7 +24,7 @@ export function MicroQueue() {
     .sort((a, b) => computeTaskCumulativeScore(b, bets) - computeTaskCumulativeScore(a, bets))
 
   function startTask(taskId: string) {
-    updateTask(taskId, { status: 'active', queued_at: new Date().toISOString() })
+    updateTask(taskId, { status: 'executing', queued_at: new Date().toISOString() })
     setActiveTask(taskId)
     setMode('execute')
   }

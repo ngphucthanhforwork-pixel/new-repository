@@ -27,7 +27,7 @@ export interface Task {
   estimated_time: number     // minutes
   certainty: number          // 0–1
   intrinsic_impact: number   // 0–1
-  status: 'queued' | 'active' | 'completed'
+  status: 'backlog' | 'locked' | 'queued' | 'scheduled' | 'executing' | 'done'
   unprocessed?: boolean      // captured without bet assignment
   queued_at?: string         // ISO timestamp, set when added to micro queue
   completed_at?: string      // ISO timestamp

@@ -24,7 +24,7 @@ export function CaptureView() {
       estimated_time: 30,
       certainty: 0.5,
       intrinsic_impact: 0.5,
-      status: 'queued',
+      status: 'backlog',
       unprocessed: true,
     })
     setText('')

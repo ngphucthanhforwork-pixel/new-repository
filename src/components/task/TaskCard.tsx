@@ -4,6 +4,39 @@ import { useBetStore } from '@/store/useBetStore'
 import { useAppStore } from '@/store/useAppStore'
 import { computeTaskCumulativeScore, computeCumulativeScore } from '@/lib/scoring'
 import { DualArcSlider } from '@/components/ui/DualArcSlider'
+import type { Task } from '@/lib/types'
+
+// ─── Date helpers (ISO ↔ dd/mm/yy) ──────────────────────────────────────────
+
+function isoToDisplay(iso: string): string {
+  if (!iso) return ''
+  const [y, m, d] = iso.split('-')
+  if (!y || !m || !d) return iso
+  return `${d}/${m}/${y.slice(2)}`
+}
+
+function displayToIso(display: string): string {
+  const parts = display.trim().split('/')
+  if (parts.length !== 3) return ''
+  const [d, m, y] = parts
+  if (!d || !m || !y) return ''
+  const year = y.length === 2 ? '20' + y : y
+  if (isNaN(Number(d)) || isNaN(Number(m)) || isNaN(Number(year))) return ''
+  return `${year}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+}
+
+// ─── Status config ────────────────────────────────────────────────────────────
+
+type TaskStatus = Task['status']
+
+const STATUS_OPTIONS: { value: TaskStatus; label: string; color: string; bg: string }[] = [
+  { value: 'backlog',    label: 'BACKLOG',    color: 'rgba(255,255,255,0.3)',  bg: 'rgba(255,255,255,0.04)' },
+  { value: 'locked',    label: 'LOCKED',     color: 'rgba(160,140,255,0.7)',  bg: 'rgba(160,140,255,0.08)' },
+  { value: 'queued',    label: 'QUEUED',     color: 'rgba(232,160,69,0.7)',   bg: 'rgba(232,160,69,0.08)'  },
+  { value: 'scheduled', label: 'SCHEDULED',  color: 'rgba(74,184,200,0.7)',   bg: 'rgba(74,184,200,0.08)'  },
+  { value: 'executing', label: 'EXECUTING',  color: '#e8a045',                bg: 'rgba(232,160,69,0.14)'  },
+  { value: 'done',      label: 'DONE',       color: 'rgba(74,184,176,0.8)',   bg: 'rgba(74,184,176,0.1)'   },
+]
 
 // ─── Overlay wrapper (rendered from App.tsx) ─────────────────────────────────
 
@@ -57,8 +90,9 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
   const [reward, setReward] = useState(task?.reward ?? '')
   const [consequence, setConsequence] = useState(task?.consequence ?? '')
   const [betId, setBetId] = useState(task?.bet_id ?? '')
-  const [startDate, setStartDate] = useState(task?.start_date ?? '')
-  const [dueDate, setDueDate] = useState(task?.due_date ?? '')
+  const [startDate, setStartDate] = useState(() => isoToDisplay(task?.start_date ?? ''))
+  const [dueDate, setDueDate] = useState(() => isoToDisplay(task?.due_date ?? ''))
+  const [status, setStatus] = useState<TaskStatus>(task?.status ?? 'backlog')
 
   // Sync local state if task changes externally
   useEffect(() => {
@@ -73,8 +107,9 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
     setReward(task.reward ?? '')
     setConsequence(task.consequence ?? '')
     setBetId(task.bet_id ?? '')
-    setStartDate(task.start_date ?? '')
-    setDueDate(task.due_date ?? '')
+    setStartDate(isoToDisplay(task.start_date ?? ''))
+    setDueDate(isoToDisplay(task.due_date ?? ''))
+    setStatus(task.status)
   }, [taskId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = useCallback((patch: Parameters<typeof updateTask>[1]) => {
@@ -88,8 +123,14 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
   const parentScore = parentBet ? computeCumulativeScore(parentBet, bets) : null
 
   function saveToBacklog() {
-    save({ unprocessed: false, status: 'queued' })
+    save({ unprocessed: false, status: 'backlog' })
+    setStatus('backlog')
     onClose()
+  }
+
+  function handleStatusChange(s: TaskStatus) {
+    setStatus(s)
+    save({ status: s })
   }
 
   function handleCertaintyChange(v: number) {
@@ -248,26 +289,40 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
             />
           </div>
 
-          {/* Dates */}
+          {/* Dates — dd/mm/yy text inputs */}
           <div className="flex items-center gap-4 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
             <div className="flex items-center gap-2">
               <span className="font-mono text-[9px] tracking-widest shrink-0" style={{ color: 'rgba(255,255,255,0.25)' }}>START</span>
               <input
-                type="date"
+                type="text"
                 value={startDate}
-                onChange={e => { setStartDate(e.target.value); save({ start_date: e.target.value || undefined }) }}
-                className="bg-transparent outline-none font-mono text-xs cursor-pointer"
-                style={{ color: startDate ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.18)', colorScheme: 'dark' }}
+                onChange={e => setStartDate(e.target.value)}
+                onBlur={() => {
+                  const iso = displayToIso(startDate)
+                  if (iso) { save({ start_date: iso }) }
+                  else if (!startDate) { save({ start_date: undefined }) }
+                }}
+                placeholder="dd/mm/yy"
+                maxLength={8}
+                className="bg-transparent outline-none font-mono text-xs w-16"
+                style={{ color: startDate ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.18)', caretColor: '#e8a045' }}
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[9px] tracking-widest shrink-0" style={{ color: startDate && dueDate && dueDate < startDate ? '#e05555' : 'rgba(255,255,255,0.25)' }}>DUE</span>
+              <span className="font-mono text-[9px] tracking-widest shrink-0" style={{ color: 'rgba(255,255,255,0.25)' }}>DUE</span>
               <input
-                type="date"
+                type="text"
                 value={dueDate}
-                onChange={e => { setDueDate(e.target.value); save({ due_date: e.target.value || undefined }) }}
-                className="bg-transparent outline-none font-mono text-xs cursor-pointer"
-                style={{ color: dueDate ? (startDate && dueDate < startDate ? '#e05555' : 'rgba(232,160,69,0.7)') : 'rgba(255,255,255,0.18)', colorScheme: 'dark' }}
+                onChange={e => setDueDate(e.target.value)}
+                onBlur={() => {
+                  const iso = displayToIso(dueDate)
+                  if (iso) { save({ due_date: iso }) }
+                  else if (!dueDate) { save({ due_date: undefined }) }
+                }}
+                placeholder="dd/mm/yy"
+                maxLength={8}
+                className="bg-transparent outline-none font-mono text-xs w-16"
+                style={{ color: dueDate ? 'rgba(232,160,69,0.7)' : 'rgba(255,255,255,0.18)', caretColor: '#e8a045' }}
               />
             </div>
           </div>
@@ -438,21 +493,25 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
             ))}
           </div>
 
-          {/* Status badge */}
-          <div className="mt-auto">
-            <div
-              className="font-mono text-[10px] tracking-widest px-2 py-1 text-center"
-              style={{
-                color: task.status === 'completed'
-                  ? 'rgba(74,184,176,0.7)'
-                  : task.status === 'active'
-                  ? '#e8a045'
-                  : 'rgba(255,255,255,0.2)',
-                border: `1px solid ${task.status === 'completed' ? 'rgba(74,184,176,0.2)' : task.status === 'active' ? 'rgba(232,160,69,0.2)' : 'rgba(255,255,255,0.06)'}`,
-              }}
-            >
-              {task.status.toUpperCase()}
+          {/* Status selector */}
+          <div className="mt-auto flex flex-col gap-1">
+            <div className="font-mono text-[9px] tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.2)' }}>
+              STATUS
             </div>
+            {STATUS_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => handleStatusChange(opt.value)}
+                className="text-left font-mono text-[10px] tracking-widest px-2 py-1 transition-all"
+                style={{
+                  color: status === opt.value ? opt.color : 'rgba(255,255,255,0.18)',
+                  background: status === opt.value ? opt.bg : 'transparent',
+                  border: `1px solid ${status === opt.value ? opt.color.replace(')', ',0.3)').replace('rgba(', 'rgba(') : 'rgba(255,255,255,0.04)'}`,
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -462,7 +521,7 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
         className="shrink-0 px-6 py-4"
         style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
       >
-        {task.status === 'completed' ? (
+        {task.status === 'done' ? (
           <div
             className="w-full py-3 text-center font-mono text-xs tracking-widest"
             style={{ color: 'rgba(74,184,176,0.6)', border: '1px solid rgba(74,184,176,0.15)' }}

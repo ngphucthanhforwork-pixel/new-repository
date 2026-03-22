@@ -19,7 +19,7 @@ export function TaskView() {
   const parentBet = bets.find(b => b.id === task.bet_id)
 
   function startMission() {
-    updateTask(taskId, { status: 'active', queued_at: new Date().toISOString() })
+    updateTask(taskId, { status: 'executing', queued_at: new Date().toISOString() })
     setActiveTask(taskId)
     setMode('execute')
     deselect()
@@ -195,7 +195,7 @@ export function TaskView() {
         className="px-5 py-4 shrink-0"
         style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
       >
-        {task.status !== 'completed' ? (
+        {task.status !== 'done' ? (
           <button
             onClick={startMission}
             className="w-full py-3 font-mono text-xs tracking-widest transition-colors"
