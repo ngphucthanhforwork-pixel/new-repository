@@ -6,6 +6,7 @@ import { ScoreSlider } from '@/components/ui/ScoreSlider'
 
 interface HabitFormProps {
   onDone: () => void
+  initialTitle?: string
 }
 
 const RECURRENCE_PRESETS = [
@@ -15,10 +16,10 @@ const RECURRENCE_PRESETS = [
   { label: 'Custom', hours: 0 },
 ]
 
-export function HabitForm({ onDone }: HabitFormProps) {
+export function HabitForm({ onDone, initialTitle = '' }: HabitFormProps) {
   const { addHabit } = useHabitStore()
   const { bets } = useBetStore()
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState(initialTitle)
   const [type, setType] = useState<'proactive' | 'maintenance'>('proactive')
   const [parentId, setParentId] = useState('')
   const [recurrencePreset, setRecurrencePreset] = useState(24)
