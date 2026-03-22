@@ -29,6 +29,7 @@ export function BetPiece({ betId, index }: BetPieceProps) {
   const opacity = bet.status === 'paused' ? 0.5 : decayOpacity(decay)
   const isSelected = selectedId === betId
   const isPaused = bet.status === 'paused'
+  const isLocked = bet.locked === true
 
   // Drag state
   const isDragging = useRef(false)
@@ -61,9 +62,15 @@ export function BetPiece({ betId, index }: BetPieceProps) {
     isDragging.current = false
   }
 
-  // Border style
-  const borderColor = isPaused ? 'rgba(255,255,255,0.2)' : (isSelected ? '#e8a045' : 'rgba(232,160,69,0.5)')
-  const borderWidth = isSelected ? 2 : 1
+  // Border style — locked trumps selected trumps normal
+  const borderColor = isPaused
+    ? 'rgba(255,255,255,0.2)'
+    : isLocked
+    ? '#e8a045'
+    : isSelected
+    ? '#e8a045'
+    : 'rgba(232,160,69,0.5)'
+  const borderWidth = isLocked || isSelected ? 2 : 1
   const borderStyle = isPaused ? 'dashed' : 'solid'
 
   return (
@@ -127,6 +134,15 @@ export function BetPiece({ betId, index }: BetPieceProps) {
         }}>
           {score.toFixed(2)}
         </span>
+        {isLocked && (
+          <span style={{
+            position: 'absolute',
+            top: 4,
+            right: 6,
+            fontSize: 9,
+            opacity: 0.7,
+          }}>🔒</span>
+        )}
       </div>
 
       {/* Bet title below piece */}

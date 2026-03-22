@@ -50,7 +50,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
           ...h,
           status: 'dimmed' as const,
           last_completed_at: now.toISOString(),
-          next_due_at: addHours(now, h.recurrence).toISOString(),
+          next_due_at: addHours(now, h.recurrence_hours).toISOString(),
         }
       })
       saveState({ ...loadState(), habits })

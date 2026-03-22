@@ -9,6 +9,8 @@ interface BetStore {
   addBet: (data: Omit<Bet, 'id' | 'createdAt' | 'last_active_at'>) => Bet
   updateBet: (id: string, data: Partial<Bet>) => void
   deleteBet: (id: string) => void
+  lockBet: (id: string) => void
+  unlockBet: (id: string) => void
   getBet: (id: string) => Bet | undefined
   getChildren: (parentId: string) => Bet[]
   getRoots: () => Bet[]
@@ -45,6 +47,22 @@ export const useBetStore = create<BetStore>((set, get) => ({
   deleteBet: (id) => {
     set((s) => {
       const bets = s.bets.filter(b => b.id !== id)
+      saveState({ ...loadState(), bets })
+      return { bets }
+    })
+  },
+
+  lockBet: (id) => {
+    set((s) => {
+      const bets = s.bets.map(b => b.id === id ? { ...b, locked: true } : b)
+      saveState({ ...loadState(), bets })
+      return { bets }
+    })
+  },
+
+  unlockBet: (id) => {
+    set((s) => {
+      const bets = s.bets.map(b => b.id === id ? { ...b, locked: false } : b)
       saveState({ ...loadState(), bets })
       return { bets }
     })

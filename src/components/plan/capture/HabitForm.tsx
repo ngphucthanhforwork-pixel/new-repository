@@ -37,7 +37,7 @@ export function HabitForm({ onDone }: HabitFormProps) {
       title: title.trim(),
       type,
       parent_id: park ? undefined : parentId || undefined,
-      recurrence: recurrenceHours,
+      recurrence_hours: recurrenceHours,
       certainty: type === 'proactive' ? certainty : undefined,
       intrinsic_impact: type === 'proactive' ? intrinsicImpact : undefined,
       status: 'active',

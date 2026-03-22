@@ -71,7 +71,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 
   getReviewBacklog: () =>
     get().completionLogs
-      .filter(l => l.review_decision)
+      .filter(l => l.review_decision === 'yes')
       .sort((a, b) => b.review_priority - a.review_priority),
 
   getLastSession: () => {

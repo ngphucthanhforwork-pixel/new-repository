@@ -2,12 +2,14 @@ import { useBattlefieldStore } from '@/store/useBattlefieldStore'
 import { useBetStore } from '@/store/useBetStore'
 import { useTaskStore } from '@/store/useTaskStore'
 import { useHabitStore } from '@/store/useHabitStore'
+import { useCampaignStore } from '@/store/useCampaignStore'
 import { computeChessRank, computeCumulativeScore, computeTaskCumulativeScore } from '@/lib/scoring'
 import { TaskView } from './TaskView'
 
 export function MissionPanel() {
   const { panelOpen, selectedId, panelTaskId, deselect, openTaskView } = useBattlefieldStore()
-  const { bets, updateBet, deleteBet } = useBetStore()
+  const { bets, updateBet, deleteBet, lockBet, unlockBet } = useBetStore()
+  const { addToGrand } = useCampaignStore()
   const { tasks } = useTaskStore()
   const { habits, completeHabit } = useHabitStore()
 
@@ -47,6 +49,9 @@ export function MissionPanel() {
             onUpdate={(data) => updateBet(bet.id, data)}
             onDelete={() => { deleteBet(bet.id); deselect() }}
             onOpenTask={openTaskView}
+            onLock={() => lockBet(bet.id)}
+            onUnlock={() => unlockBet(bet.id)}
+            onAddToQueue={() => { addToGrand(bet.id) }}
           />
         ) : habit ? (
           <HabitPanel habit={habit} onClose={deselect} onComplete={() => completeHabit(habit.id)} />
@@ -70,9 +75,12 @@ interface BetPanelProps {
   onUpdate: (data: Partial<Bet>) => void
   onDelete: () => void
   onOpenTask: (id: string) => void
+  onLock: () => void
+  onUnlock: () => void
+  onAddToQueue: () => void
 }
 
-function BetPanel({ bet, rank, score, tasks, allBets, onClose, onUpdate, onDelete, onOpenTask }: BetPanelProps) {
+function BetPanel({ bet, rank, score, tasks, allBets, onClose, onUpdate, onDelete, onOpenTask, onLock, onUnlock, onAddToQueue }: BetPanelProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Amber header strip */}
@@ -101,8 +109,8 @@ function BetPanel({ bet, rank, score, tasks, allBets, onClose, onUpdate, onDelet
         {bet.consequence && (
           <div className="px-4 py-3 border-b border-white/5">
             <div className="flex items-center gap-2 mb-1">
-              <span>✊</span>
-              <span className="text-[10px] font-mono text-white/30 tracking-widest">IF NOT</span>
+              <span style={{ color: '#e05555' }}>✊</span>
+              <span className="text-[10px] font-mono tracking-widest" style={{ color: '#e05555', opacity: 0.7 }}>IF NOT</span>
             </div>
             <p className="text-xs font-mono text-white/70 leading-relaxed">{bet.consequence}</p>
           </div>
@@ -151,6 +159,16 @@ function BetPanel({ bet, rank, score, tasks, allBets, onClose, onUpdate, onDelet
 
         {/* Actions */}
         <div className="px-4 py-3 flex flex-col gap-1">
+          <ActionBtn
+            label="+ ADD TO QUEUE"
+            onClick={onAddToQueue}
+            highlight
+          />
+          {!bet.locked ? (
+            <ActionBtn label="LOCK" onClick={onLock} />
+          ) : (
+            <ActionBtn label="UNLOCK" onClick={onUnlock} highlight />
+          )}
           {bet.status === 'active' && (
             <ActionBtn
               label="PAUSE"
@@ -161,7 +179,6 @@ function BetPanel({ bet, rank, score, tasks, allBets, onClose, onUpdate, onDelet
             <ActionBtn
               label="RESUME"
               onClick={() => onUpdate({ status: 'active', last_active_at: new Date().toISOString() })}
-              highlight
             />
           )}
           <ActionBtn
@@ -200,7 +217,7 @@ function HabitPanel({ habit, onClose, onComplete }: { habit: Habit; onClose: () 
           </div>
           <div>
             <div className="text-[10px] font-mono text-white/30 mb-1">RECURRENCE</div>
-            <div className="text-xs font-mono text-white/60">every {habit.recurrence}h</div>
+            <div className="text-xs font-mono text-white/60">every {habit.recurrence_hours}h</div>
           </div>
           <div>
             <div className="text-[10px] font-mono text-white/30 mb-1">STATUS</div>

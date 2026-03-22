@@ -180,7 +180,7 @@ function BetRow({ betId, depth }: { betId: string; depth: number }) {
             >
               <span className="text-[10px] font-mono text-teal/40 w-8 shrink-0">HAB</span>
               <span className="text-xs font-mono text-white/50 flex-1 truncate">{habit.title}</span>
-              <span className="text-[10px] font-mono text-white/20">{habit.recurrence}h</span>
+              <span className="text-[10px] font-mono text-white/20">{habit.recurrence_hours}h</span>
             </div>
           ))}
         </div>

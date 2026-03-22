@@ -9,6 +9,7 @@ export interface Bet {
   intrinsic_impact: number   // 0–1
   parent_bet_id?: string
   status: 'active' | 'paused' | 'killed' | 'completed'
+  locked?: boolean           // locked into queue, cannot be moved
   last_active_at: string     // ISO timestamp
   createdAt: string
 }
@@ -23,6 +24,8 @@ export interface Task {
   intrinsic_impact: number   // 0–1
   status: 'queued' | 'active' | 'completed'
   unprocessed?: boolean      // captured without bet assignment
+  queued_at?: string         // ISO timestamp, set when added to micro queue
+  completed_at?: string      // ISO timestamp
   createdAt: string
 }
 
@@ -31,7 +34,7 @@ export interface Habit {
   title: string
   type: 'proactive' | 'maintenance'
   parent_id?: string         // bet ID or area ID; optional when parked
-  recurrence: number         // hours
+  recurrence_hours: number   // interval between activations
   certainty?: number         // proactive only
   intrinsic_impact?: number  // proactive only
   status: 'active' | 'dimmed' | 'paused'
@@ -44,6 +47,7 @@ export interface Area {
   id: string
   title: string
   description?: string
+  color?: string             // hex — for Battlefield zone tinting
 }
 
 export interface TimeSession {
@@ -76,7 +80,7 @@ export interface TaskCompletionLog {
   time_deviation: number     // 0–1
   effort_felt: number        // 0–1
   effort_notes?: string
-  review_decision: boolean
+  review_decision: 'yes' | 'no'
   // computed
   deviation_score: number    // avg(outcome_deviation, time_deviation)
   review_priority: number    // deviation_score × effort_felt × task.cumulative_score
@@ -92,6 +96,7 @@ export interface KolbEntry {
   experiment: string
   output_type: 'new_bet' | 'update_confidence' | 'insight_only'
   output_ref?: string        // bet ID if linked
+  confidence_note?: string   // note explaining confidence update
   insight_quality: number    // 0–1
   createdAt: string
 }
@@ -123,6 +128,8 @@ export interface AppState {
   kolbEntries: KolbEntry[]
   piecePositions: PiecePosition[]
   zones: Zone[]
+  grandQueue: string[]       // ordered bet IDs
+  microQueue: string[]       // ordered task IDs
 }
 
 // ─── Computed / UI types ──────────────────────────────────────────────────────

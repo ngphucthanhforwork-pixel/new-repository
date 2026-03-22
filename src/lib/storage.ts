@@ -11,6 +11,8 @@ const DEFAULT_STATE: AppState = {
   completionLogs: [],
   kolbEntries: [],
   piecePositions: [],
+  grandQueue: [],
+  microQueue: [],
   zones: [
     {
       id: 'zone-work',
