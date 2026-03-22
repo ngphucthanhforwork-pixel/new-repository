@@ -96,6 +96,30 @@ function BetPanel({ bet, rank, score, tasks, allBets, onClose, onUpdate, onDelet
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto flex flex-col" style={{ background: '#0d1520' }}>
+
+        {/* PARENT GOAL selector */}
+        <div className="px-4 py-3 border-b border-white/5">
+          <div className="text-[10px] font-mono text-white/30 tracking-widest mb-2">PARENT GOAL</div>
+          <select
+            value={bet.parent_bet_id ?? ''}
+            onChange={e => onUpdate({ parent_bet_id: e.target.value || undefined })}
+            className="w-full bg-transparent font-mono text-xs outline-none cursor-pointer"
+            style={{
+              color: bet.parent_bet_id ? 'rgba(232,160,69,0.75)' : 'rgba(255,255,255,0.2)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              padding: '5px 8px',
+              appearance: 'none',
+            }}
+          >
+            <option value="" style={{ background: '#0d1525' }}>♚ Root goal (no parent)</option>
+            {allBets.filter(b => b.id !== bet.id && b.status !== 'killed' && b.status !== 'completed').map(b => (
+              <option key={b.id} value={b.id} style={{ background: '#0d1525', color: '#e8a045' }}>
+                {b.title}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* REWARD */}
         {bet.reward && (
           <div className="px-4 py-3 border-b border-white/5">
