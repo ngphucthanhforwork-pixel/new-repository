@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
-import { CapturePanel } from './CapturePanel'
 import { BattlefieldMinimap } from '@/components/plan/battlefield/BattlefieldMinimap'
+import { useTaskStore } from '@/store/useTaskStore'
+import { useAppStore } from '@/store/useAppStore'
 
 const GHOST_LINES = [
   "What are you betting on?",
@@ -9,20 +10,25 @@ const GHOST_LINES = [
 
 export function CaptureView() {
   const [text, setText] = useState('')
-  const [panelOpen, setPanelOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { addTask } = useTaskStore()
+  const { openTaskCard } = useAppStore()
 
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
   const isEmpty = text.length === 0
 
   function openCapture() {
-    setPanelOpen(true)
-  }
-
-  function onPanelClose() {
-    setPanelOpen(false)
-    // Refocus notepad after capture
-    setTimeout(() => textareaRef.current?.focus(), 50)
+    const task = addTask({
+      title: text.trim() || 'Untitled',
+      objectives: [],
+      estimated_time: 30,
+      certainty: 0.5,
+      intrinsic_impact: 0.5,
+      status: 'queued',
+      unprocessed: true,
+    })
+    setText('')
+    openTaskCard(task.id)
   }
 
   return (
@@ -147,12 +153,6 @@ export function CaptureView() {
         </div>
       </div>
 
-      {/* Capture panel (slide-in form) */}
-      <CapturePanel
-        open={panelOpen}
-        onClose={onPanelClose}
-        initialTitle={text.trim()}
-      />
     </div>
   )
 }
