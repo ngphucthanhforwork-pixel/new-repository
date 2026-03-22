@@ -5,6 +5,8 @@ import { BreakView } from '@/components/break/BreakView'
 import { ReviewView } from '@/components/review/ReviewView'
 import { HeatmapView } from '@/components/heatmap/HeatmapView'
 import { TaskCardOverlay } from '@/components/task/TaskCard'
+import { BetCardOverlay } from '@/components/card/BetCard'
+import { HabitCardOverlay } from '@/components/card/HabitCard'
 import { useAppStore } from '@/store/useAppStore'
 
 function App() {
@@ -12,13 +14,16 @@ function App() {
 
   return (
     <AppShell>
-      {mode === 'plan' && <PlanView />}
+      {mode === 'plan'    && <PlanView />}
       {mode === 'execute' && <ExecuteView />}
-      {mode === 'break' && <BreakView />}
-      {mode === 'review' && <ReviewView />}
+      {mode === 'break'   && <BreakView />}
+      {mode === 'review'  && <ReviewView />}
       {mode === 'heatmap' && <HeatmapView />}
-      {/* Global task card overlay — rendered above all modes */}
+
+      {/* Global item card overlays — rendered above all modes */}
       <TaskCardOverlay />
+      <BetCardOverlay />
+      <HabitCardOverlay />
     </AppShell>
   )
 }

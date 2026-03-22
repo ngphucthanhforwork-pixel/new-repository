@@ -41,14 +41,15 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string; color: string; bg: str
 // ─── Overlay wrapper (rendered from App.tsx) ─────────────────────────────────
 
 export function TaskCardOverlay() {
-  const { taskCardId, closeTaskCard } = useAppStore()
+  const { cardItem, closeCard } = useAppStore()
+  const taskCardId = cardItem?.type === 'task' ? cardItem.id : null
   if (!taskCardId) return null
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: 'rgba(4,8,14,0.82)', backdropFilter: 'blur(6px)' }}
-      onClick={e => { if (e.target === e.currentTarget) closeTaskCard() }}
+      onClick={e => { if (e.target === e.currentTarget) closeCard() }}
     >
       <div
         className="w-full flex flex-col"
@@ -60,7 +61,7 @@ export function TaskCardOverlay() {
         }}
         onClick={e => e.stopPropagation()}
       >
-        <TaskCard taskId={taskCardId} onClose={closeTaskCard} />
+        <TaskCard taskId={taskCardId} onClose={closeCard} />
       </div>
     </div>
   )

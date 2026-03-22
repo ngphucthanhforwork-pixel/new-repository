@@ -5,13 +5,14 @@ import { useHabitStore } from '@/store/useHabitStore'
 import { useCampaignStore } from '@/store/useCampaignStore'
 import { useAppStore } from '@/store/useAppStore'
 import { computeChessRank, computeCumulativeScore, computeTaskCumulativeScore } from '@/lib/scoring'
+import { ActionBtn } from '@/components/ui/PanelPrimitives'
 import { TaskView } from './TaskView'
 
 export function MissionPanel() {
   const { panelOpen, selectedId, panelTaskId, deselect } = useBattlefieldStore()
   const { bets, updateBet, deleteBet, lockBet, unlockBet } = useBetStore()
   const { addToGrand } = useCampaignStore()
-  const { openTaskCard } = useAppStore()
+  const { openTaskCard, openCard } = useAppStore()
   const { tasks } = useTaskStore()
   const { habits, completeHabit } = useHabitStore()
 
@@ -51,12 +52,18 @@ export function MissionPanel() {
             onUpdate={(data) => updateBet(bet.id, data)}
             onDelete={() => { deleteBet(bet.id); deselect() }}
             onOpenTask={openTaskCard}
+            onOpenFull={() => { openCard('bet', bet.id); deselect() }}
             onLock={() => lockBet(bet.id)}
             onUnlock={() => unlockBet(bet.id)}
             onAddToQueue={() => { addToGrand(bet.id) }}
           />
         ) : habit ? (
-          <HabitPanel habit={habit} onClose={deselect} onComplete={() => completeHabit(habit.id)} />
+          <HabitPanel
+            habit={habit}
+            onClose={deselect}
+            onComplete={() => completeHabit(habit.id)}
+            onOpenFull={() => { openCard('habit', habit.id); deselect() }}
+          />
         ) : null}
       </div>
     </>
@@ -77,12 +84,13 @@ interface BetPanelProps {
   onUpdate: (data: Partial<Bet>) => void
   onDelete: () => void
   onOpenTask: (id: string) => void
+  onOpenFull: () => void
   onLock: () => void
   onUnlock: () => void
   onAddToQueue: () => void
 }
 
-function BetPanel({ bet, rank, score, tasks, allBets, onClose, onUpdate, onDelete, onOpenTask, onLock, onUnlock, onAddToQueue }: BetPanelProps) {
+function BetPanel({ bet, rank, score, tasks, allBets, onClose, onUpdate, onDelete, onOpenTask, onOpenFull, onLock, onUnlock, onAddToQueue }: BetPanelProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Amber header strip */}
@@ -185,32 +193,20 @@ function BetPanel({ bet, rank, score, tasks, allBets, onClose, onUpdate, onDelet
 
         {/* Actions */}
         <div className="px-4 py-3 flex flex-col gap-1">
-          <ActionBtn
-            label="+ ADD TO QUEUE"
-            onClick={onAddToQueue}
-            highlight
-          />
+          <ActionBtn label="→ OPEN FULL" onClick={onOpenFull} primary />
+          <ActionBtn label="+ ADD TO QUEUE" onClick={onAddToQueue} highlight />
           {!bet.locked ? (
             <ActionBtn label="LOCK" onClick={onLock} />
           ) : (
             <ActionBtn label="UNLOCK" onClick={onUnlock} highlight />
           )}
           {bet.status === 'active' && (
-            <ActionBtn
-              label="PAUSE"
-              onClick={() => onUpdate({ status: 'paused' })}
-            />
+            <ActionBtn label="PAUSE" onClick={() => onUpdate({ status: 'paused' })} />
           )}
           {bet.status === 'paused' && (
-            <ActionBtn
-              label="RESUME"
-              onClick={() => onUpdate({ status: 'active', last_active_at: new Date().toISOString() })}
-            />
+            <ActionBtn label="RESUME" onClick={() => onUpdate({ status: 'active', last_active_at: new Date().toISOString() })} />
           )}
-          <ActionBtn
-            label="ARCHIVE"
-            onClick={() => { onUpdate({ status: 'completed' }); onClose() }}
-          />
+          <ActionBtn label="ARCHIVE" onClick={() => { onUpdate({ status: 'completed' }); onClose() }} />
           <ActionBtn
             label="DELETE"
             onClick={() => { if (confirm(`Delete "${bet.title}"? This cannot be undone.`)) onDelete() }}
@@ -226,12 +222,14 @@ function BetPanel({ bet, rank, score, tasks, allBets, onClose, onUpdate, onDelet
 
 import type { Habit } from '@/lib/types'
 
-function HabitPanel({ habit, onClose, onComplete }: { habit: Habit; onClose: () => void; onComplete: () => void }) {
+function HabitPanel({ habit, onClose, onComplete, onOpenFull }: {
+  habit: Habit; onClose: () => void; onComplete: () => void; onOpenFull: () => void
+}) {
   const isDue = new Date(habit.next_due_at) <= new Date()
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-teal/20 shrink-0" style={{ background: '#0a2020' }}>
-        <span className="text-teal text-lg">◈</span>
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-teal/20 shrink-0" style={{ background: '#0d2a2a' }}>
+        <span className="text-teal text-lg">↻</span>
         <span className="text-xs font-mono text-teal/80 flex-1 truncate tracking-wide">{habit.title}</span>
         <button onClick={onClose} className="text-white/30 hover:text-white/70 text-xs font-mono">✕</button>
       </div>
@@ -252,36 +250,12 @@ function HabitPanel({ habit, onClose, onComplete }: { habit: Habit; onClose: () 
             </div>
           </div>
         </div>
-        {isDue && (
-          <button
-            onClick={onComplete}
-            className="w-full py-2 text-xs font-mono tracking-widest border border-teal/40 text-teal bg-teal/5 hover:bg-teal/15 transition-colors"
-          >
-            ✓ MARK DONE
-          </button>
-        )}
+        <div className="flex flex-col gap-1 mt-auto">
+          <ActionBtn label="→ OPEN FULL" onClick={onOpenFull} primary />
+          {isDue && <ActionBtn label="✓ MARK DONE" onClick={onComplete} highlight />}
+        </div>
       </div>
     </div>
   )
 }
 
-// ─── Shared ───────────────────────────────────────────────────────────────────
-
-function ActionBtn({ label, onClick, danger, highlight }: {
-  label: string; onClick: () => void; danger?: boolean; highlight?: boolean
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full py-2 text-xs font-mono tracking-widest border transition-colors ${
-        danger
-          ? 'border-red-500/20 text-red-400/50 hover:text-red-400/80 hover:border-red-500/40'
-          : highlight
-          ? 'border-amber/40 text-amber bg-amber/5 hover:bg-amber/15'
-          : 'border-white/8 text-white/35 hover:text-white/60 hover:border-white/15'
-      }`}
-    >
-      {label}
-    </button>
-  )
-}
