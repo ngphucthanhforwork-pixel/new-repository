@@ -43,7 +43,6 @@ interface TaskCardProps {
 function TaskCard({ taskId, onClose }: TaskCardProps) {
   const { tasks, updateTask } = useTaskStore()
   const { bets } = useBetStore()
-  const { setMode, setActiveTask } = useAppStore()
 
   const task = tasks.find(t => t.id === taskId)
 
@@ -58,6 +57,8 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
   const [reward, setReward] = useState(task?.reward ?? '')
   const [consequence, setConsequence] = useState(task?.consequence ?? '')
   const [betId, setBetId] = useState(task?.bet_id ?? '')
+  const [startDate, setStartDate] = useState(task?.start_date ?? '')
+  const [dueDate, setDueDate] = useState(task?.due_date ?? '')
 
   // Sync local state if task changes externally
   useEffect(() => {
@@ -72,6 +73,8 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
     setReward(task.reward ?? '')
     setConsequence(task.consequence ?? '')
     setBetId(task.bet_id ?? '')
+    setStartDate(task.start_date ?? '')
+    setDueDate(task.due_date ?? '')
   }, [taskId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = useCallback((patch: Parameters<typeof updateTask>[1]) => {
@@ -84,10 +87,8 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
   const score = computeTaskCumulativeScore({ ...task, bet_id: betId || undefined }, bets)
   const parentScore = parentBet ? computeCumulativeScore(parentBet, bets) : null
 
-  function startMission() {
-    save({ status: 'active', queued_at: new Date().toISOString() })
-    setActiveTask(taskId)
-    setMode('execute')
+  function saveToBacklog() {
+    save({ unprocessed: false, status: 'queued' })
     onClose()
   }
 
@@ -245,6 +246,30 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
               style={{ color: 'rgba(255,255,255,0.5)', caretColor: '#e05555', lineHeight: 1.5 }}
               spellCheck={false}
             />
+          </div>
+
+          {/* Dates */}
+          <div className="flex items-center gap-4 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[9px] tracking-widest shrink-0" style={{ color: 'rgba(255,255,255,0.25)' }}>START</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => { setStartDate(e.target.value); save({ start_date: e.target.value || undefined }) }}
+                className="bg-transparent outline-none font-mono text-xs cursor-pointer"
+                style={{ color: startDate ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.18)', colorScheme: 'dark' }}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[9px] tracking-widest shrink-0" style={{ color: startDate && dueDate && dueDate < startDate ? '#e05555' : 'rgba(255,255,255,0.25)' }}>DUE</span>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={e => { setDueDate(e.target.value); save({ due_date: e.target.value || undefined }) }}
+                className="bg-transparent outline-none font-mono text-xs cursor-pointer"
+                style={{ color: dueDate ? (startDate && dueDate < startDate ? '#e05555' : 'rgba(232,160,69,0.7)') : 'rgba(255,255,255,0.18)', colorScheme: 'dark' }}
+              />
+            </div>
           </div>
         </div>
 
@@ -432,14 +457,21 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
         </div>
       </div>
 
-      {/* ── CTA: Start Mission ───────────────────────────────────────────── */}
+      {/* ── CTA: Save to Battlefield ─────────────────────────────────── */}
       <div
         className="shrink-0 px-6 py-4"
         style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
       >
-        {task.status !== 'completed' ? (
+        {task.status === 'completed' ? (
+          <div
+            className="w-full py-3 text-center font-mono text-xs tracking-widest"
+            style={{ color: 'rgba(74,184,176,0.6)', border: '1px solid rgba(74,184,176,0.15)' }}
+          >
+            ✓ MISSION COMPLETE
+          </div>
+        ) : (
           <button
-            onClick={startMission}
+            onClick={saveToBacklog}
             className="w-full py-3 font-mono text-xs tracking-widest transition-all"
             style={{
               background: 'rgba(232,160,69,0.1)',
@@ -455,15 +487,8 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
               e.currentTarget.style.borderColor = 'rgba(232,160,69,0.4)'
             }}
           >
-            → START MISSION
+            → SAVE TO BATTLEFIELD
           </button>
-        ) : (
-          <div
-            className="w-full py-3 text-center font-mono text-xs tracking-widest"
-            style={{ color: 'rgba(74,184,176,0.6)', border: '1px solid rgba(74,184,176,0.15)' }}
-          >
-            ✓ MISSION COMPLETE
-          </div>
         )}
       </div>
     </div>

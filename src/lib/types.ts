@@ -22,6 +22,8 @@ export interface Task {
   objectives_done?: boolean[] // parallel to objectives, checked state
   reward?: string            // what you win if done
   consequence?: string       // cost if skipped
+  start_date?: string        // ISO date string (YYYY-MM-DD)
+  due_date?: string          // ISO date string (YYYY-MM-DD)
   estimated_time: number     // minutes
   certainty: number          // 0–1
   intrinsic_impact: number   // 0–1
