@@ -1,49 +1,43 @@
 import { useRef } from 'react'
 
-// ─── Arc math (top semicircle, left→right = 0→1) ───────────────────────────
+// ─── Quarter-circle arcs anchored at bottom-left corner ─────────────────────
+// Center (CX, CY) is the pivot; arcs sweep from 3-o'clock → 12-o'clock
 
-const CX = 90
-const CY = 100
-const R_OUTER = 84   // Certainty (amber)
-const R_INNER = 62   // Intrinsic Impact (teal)
+const CX = 6    // pivot x (near left edge)
+const CY = 92   // pivot y (near bottom)
+const R_OUTER = 82  // Certainty (amber) — right: (88, 92), top: (6, 10)
+const R_INNER = 60  // Intrinsic Impact (teal) — right: (66, 92), top: (6, 32)
 
 function arcPos(v: number, r: number) {
-  const angle = Math.PI * (1 - v)  // π at v=0 (left), 0 at v=1 (right)
+  const angle = v * (Math.PI / 2)  // 0 → 0° (right), 1 → 90° (up)
   return {
     x: CX + r * Math.cos(angle),
-    y: CY - r * Math.sin(angle),  // negate: SVG y goes down, math y goes up
+    y: CY - r * Math.sin(angle),  // SVG y inverted
   }
 }
 
-function filledArcPath(v: number, r: number): string {
+// Counter-clockwise in SVG (sweep=0) goes from right UP to top — the short 90° path ✓
+function quarterFillPath(v: number, r: number): string {
   if (v <= 0.001) return ''
-  if (v >= 0.999) {
-    // Full semicircle as two quarter-arcs to avoid degenerate case
-    return `M ${CX - r} ${CY} A ${r} ${r} 0 0 0 ${CX} ${CY - r} A ${r} ${r} 0 0 0 ${CX + r} ${CY}`
-  }
+  if (v >= 0.999) return `M ${CX + r} ${CY} A ${r} ${r} 0 0 0 ${CX} ${CY - r}`
   const { x, y } = arcPos(v, r)
-  return `M ${CX - r} ${CY} A ${r} ${r} 0 0 0 ${x} ${y}`
+  return `M ${CX + r} ${CY} A ${r} ${r} 0 0 0 ${x} ${y}`
 }
 
-function bgArcPath(r: number): string {
-  return `M ${CX - r} ${CY} A ${r} ${r} 0 0 0 ${CX} ${CY - r} A ${r} ${r} 0 0 0 ${CX + r} ${CY}`
+function quarterBgPath(r: number): string {
+  return `M ${CX + r} ${CY} A ${r} ${r} 0 0 0 ${CX} ${CY - r}`
 }
 
-function svgCoordsToValue(
-  clientX: number,
-  clientY: number,
-  svgEl: SVGSVGElement,
-): number {
+function svgCoordsToValue(clientX: number, clientY: number, svgEl: SVGSVGElement): number {
   const rect = svgEl.getBoundingClientRect()
-  const svgX = (clientX - rect.left) * (180 / rect.width)
-  const svgY = (clientY - rect.top) * (110 / rect.height)
+  const svgX = (clientX - rect.left) * (100 / rect.width)
+  const svgY = (clientY - rect.top) * (100 / rect.height)
   const dx = svgX - CX
-  const dy = CY - svgY  // flip y
-  let angle = Math.atan2(dy, dx)  // standard math angle ∈ (−π, π]
-  // Below the center: snap to nearest end
-  if (angle <= 0) return dx <= 0 ? 0 : 1
-  // v = 1 − angle/π
-  return Math.max(0, Math.min(1, 1 - angle / Math.PI))
+  const dy = CY - svgY  // flip: math y goes up
+  if (dy <= 0) return 0
+  if (dx <= 0) return 1
+  const angle = Math.atan2(dy, dx)  // 0 to π/2 for first quadrant
+  return Math.max(0, Math.min(1, angle / (Math.PI / 2)))
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -85,13 +79,13 @@ export function DualArcSlider({ certainty, impact, onCertaintyChange, onImpactCh
     <div className="flex flex-col items-center gap-2">
       <svg
         ref={svgRef}
-        viewBox="0 0 180 110"
-        style={{ width: 160, height: 98, display: 'block', overflow: 'visible' }}
+        viewBox="0 0 100 100"
+        style={{ width: 130, height: 130, display: 'block', overflow: 'visible' }}
       >
         {/* Outer arc — Certainty (amber) */}
-        <path d={bgArcPath(R_OUTER)} fill="none" stroke="rgba(232,160,69,0.1)" strokeWidth={5} strokeLinecap="round" />
-        {filledArcPath(certainty, R_OUTER) && (
-          <path d={filledArcPath(certainty, R_OUTER)} fill="none" stroke="#e8a045" strokeWidth={5} strokeLinecap="round" strokeOpacity={0.75} />
+        <path d={quarterBgPath(R_OUTER)} fill="none" stroke="rgba(232,160,69,0.1)" strokeWidth={5} strokeLinecap="round" />
+        {quarterFillPath(certainty, R_OUTER) && (
+          <path d={quarterFillPath(certainty, R_OUTER)} fill="none" stroke="#e8a045" strokeWidth={5} strokeLinecap="round" strokeOpacity={0.8} />
         )}
         <circle
           cx={certaintyHandle.x}
@@ -101,16 +95,16 @@ export function DualArcSlider({ certainty, impact, onCertaintyChange, onImpactCh
           fillOpacity={0.9}
           stroke="#070c14"
           strokeWidth={2}
-          style={{ cursor: 'ew-resize' }}
+          style={{ cursor: 'pointer' }}
           onPointerDown={onPointerDown('certainty')}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
         />
 
         {/* Inner arc — Intrinsic Impact (teal) */}
-        <path d={bgArcPath(R_INNER)} fill="none" stroke="rgba(74,184,176,0.1)" strokeWidth={5} strokeLinecap="round" />
-        {filledArcPath(impact, R_INNER) && (
-          <path d={filledArcPath(impact, R_INNER)} fill="none" stroke="#4ab8b0" strokeWidth={5} strokeLinecap="round" strokeOpacity={0.75} />
+        <path d={quarterBgPath(R_INNER)} fill="none" stroke="rgba(74,184,176,0.1)" strokeWidth={5} strokeLinecap="round" />
+        {quarterFillPath(impact, R_INNER) && (
+          <path d={quarterFillPath(impact, R_INNER)} fill="none" stroke="#4ab8b0" strokeWidth={5} strokeLinecap="round" strokeOpacity={0.8} />
         )}
         <circle
           cx={impactHandle.x}
@@ -120,17 +114,17 @@ export function DualArcSlider({ certainty, impact, onCertaintyChange, onImpactCh
           fillOpacity={0.9}
           stroke="#070c14"
           strokeWidth={2}
-          style={{ cursor: 'ew-resize' }}
+          style={{ cursor: 'pointer' }}
           onPointerDown={onPointerDown('impact')}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
         />
 
-        {/* Center value labels */}
-        <text x={CX} y={CY - 6} textAnchor="middle" fontSize={13} fontFamily="IBM Plex Mono, monospace" fill="rgba(232,160,69,0.9)" fontWeight="600">
+        {/* Value labels near the corner */}
+        <text x={CX + 8} y={CY - 10} textAnchor="start" fontSize={12} fontFamily="IBM Plex Mono, monospace" fill="rgba(232,160,69,0.9)" fontWeight="600">
           {Math.round(certainty * 100)}
         </text>
-        <text x={CX} y={CY + 8} textAnchor="middle" fontSize={10} fontFamily="IBM Plex Mono, monospace" fill="rgba(74,184,176,0.7)">
+        <text x={CX + 8} y={CY + 4} textAnchor="start" fontSize={10} fontFamily="IBM Plex Mono, monospace" fill="rgba(74,184,176,0.7)">
           {Math.round(impact * 100)}
         </text>
       </svg>

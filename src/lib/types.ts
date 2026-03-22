@@ -19,6 +19,9 @@ export interface Task {
   title: string
   bet_id?: string            // optional when parked/unprocessed
   objectives: string[]
+  objectives_done?: boolean[] // parallel to objectives, checked state
+  reward?: string            // what you win if done
+  consequence?: string       // cost if skipped
   estimated_time: number     // minutes
   certainty: number          // 0–1
   intrinsic_impact: number   // 0–1

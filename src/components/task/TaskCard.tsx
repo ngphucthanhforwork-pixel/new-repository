@@ -52,8 +52,12 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
   const [certainty, setCertainty] = useState(task?.certainty ?? 0.5)
   const [impact, setImpact] = useState(task?.intrinsic_impact ?? 0.5)
   const [objectives, setObjectives] = useState<string[]>(task?.objectives ?? [''])
+  const [objDone, setObjDone] = useState<boolean[]>(task?.objectives_done ?? [])
   const [estTime, setEstTime] = useState(task?.estimated_time ?? 30)
   const [notes, setNotes] = useState(task?.notes ?? '')
+  const [reward, setReward] = useState(task?.reward ?? '')
+  const [consequence, setConsequence] = useState(task?.consequence ?? '')
+  const [betId, setBetId] = useState(task?.bet_id ?? '')
 
   // Sync local state if task changes externally
   useEffect(() => {
@@ -62,8 +66,12 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
     setCertainty(task.certainty)
     setImpact(task.intrinsic_impact)
     setObjectives(task.objectives.length ? task.objectives : [''])
+    setObjDone(task.objectives_done ?? [])
     setEstTime(task.estimated_time)
     setNotes(task.notes ?? '')
+    setReward(task.reward ?? '')
+    setConsequence(task.consequence ?? '')
+    setBetId(task.bet_id ?? '')
   }, [taskId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = useCallback((patch: Parameters<typeof updateTask>[1]) => {
@@ -72,17 +80,9 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
 
   if (!task) return null
 
-  const parentBet = bets.find(b => b.id === task.bet_id)
-  const score = computeTaskCumulativeScore(task, bets)
+  const parentBet = bets.find(b => b.id === betId)
+  const score = computeTaskCumulativeScore({ ...task, bet_id: betId || undefined }, bets)
   const parentScore = parentBet ? computeCumulativeScore(parentBet, bets) : null
-
-  // Breadcrumb
-  const crumbs: string[] = []
-  if (parentBet) {
-    const grandparent = bets.find(b => b.id === parentBet.parent_bet_id)
-    if (grandparent) crumbs.push(grandparent.title)
-    crumbs.push(parentBet.title)
-  }
 
   function startMission() {
     save({ status: 'active', queued_at: new Date().toISOString() })
@@ -101,6 +101,18 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
     save({ intrinsic_impact: v })
   }
 
+  function handleBetChange(id: string) {
+    setBetId(id)
+    save({ bet_id: id || undefined })
+  }
+
+  function toggleObjDone(i: number) {
+    const next = [...objDone]
+    next[i] = !next[i]
+    setObjDone(next)
+    save({ objectives_done: next })
+  }
+
   function updateObjective(i: number, val: string) {
     const next = objectives.map((o, idx) => idx === i ? val : o)
     setObjectives(next)
@@ -109,13 +121,17 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
 
   function removeObjective(i: number) {
     const next = objectives.filter((_, idx) => idx !== i)
+    const nextDone = objDone.filter((_, idx) => idx !== i)
     const final = next.length ? next : ['']
+    const finalDone = next.length ? nextDone : []
     setObjectives(final)
-    save({ objectives: final.filter(o => o.trim()) })
+    setObjDone(finalDone)
+    save({ objectives: final.filter(o => o.trim()), objectives_done: finalDone })
   }
 
   function addObjective() {
     setObjectives(prev => [...prev, ''])
+    setObjDone(prev => [...prev, false])
   }
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -128,39 +144,25 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
         className="shrink-0 flex flex-col"
         style={{ background: '#c47a1a' }}
       >
-        {/* Breadcrumb + back + badge row */}
         <div className="flex items-center justify-between px-5 pt-3 pb-1">
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              onClick={onClose}
-              className="font-mono text-[11px] shrink-0 transition-opacity hover:opacity-70"
-              style={{ color: 'rgba(0,0,0,0.55)' }}
-            >
-              ← BACK
-            </button>
-            {crumbs.length > 0 && (
-              <>
-                <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: 11 }}>·</span>
-                <span
-                  className="font-mono text-[11px] truncate"
-                  style={{ color: 'rgba(0,0,0,0.45)' }}
-                >
-                  {crumbs.join(' › ')}
-                </span>
-              </>
-            )}
-          </div>
+          <button
+            onClick={onClose}
+            className="font-mono text-[11px] shrink-0 transition-opacity hover:opacity-70"
+            style={{ color: 'rgba(255,255,255,0.55)' }}
+          >
+            ← BACK
+          </button>
           <span
             className="shrink-0 font-mono text-[10px] tracking-widest px-2 py-0.5"
-            style={{ background: 'rgba(0,0,0,0.2)', color: 'rgba(0,0,0,0.6)' }}
+            style={{ background: 'rgba(0,0,0,0.2)', color: 'rgba(255,255,255,0.6)' }}
           >
-            {task.bet_id ? 'MISSION' : 'SIDE TASK'}
+            {betId ? 'MISSION' : 'SIDE TASK'}
           </span>
         </div>
-        {/* Editable title */}
+        {/* Editable title — white */}
         <input
           className="w-full bg-transparent outline-none font-mono font-semibold px-5 pb-3"
-          style={{ fontSize: 22, color: 'rgba(0,0,0,0.88)', caretColor: 'rgba(0,0,0,0.6)' }}
+          style={{ fontSize: 22, color: '#ffffff', caretColor: 'rgba(255,255,255,0.6)' }}
           value={title}
           onChange={e => setTitle(e.target.value)}
           onBlur={() => save({ title: title.trim() || task.title })}
@@ -186,37 +188,64 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
           />
         </div>
 
-        {/* Middle: Why context */}
+        {/* Middle: Bet selector + Reward / Consequence */}
         <div className="flex-1 flex flex-col justify-center px-6 py-4 gap-3 min-w-0">
-          {parentBet?.reward && (
-            <div className="flex items-start gap-2">
-              <span className="font-mono text-[10px] tracking-widest shrink-0 mt-0.5" style={{ color: '#e8a045' }}>REWARD</span>
-              <span className="font-mono text-xs leading-snug" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                {parentBet.reward}
-              </span>
-            </div>
-          )}
-          {parentBet?.consequence && (
-            <div className="flex items-start gap-2">
-              <span className="font-mono text-[10px] tracking-widest shrink-0 mt-0.5" style={{ color: '#e05555' }}>IF NOT</span>
-              <span className="font-mono text-xs leading-snug" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                {parentBet.consequence}
-              </span>
-            </div>
-          )}
-          {parentBet && (
-            <div className="flex items-center gap-2">
-              <span style={{ fontSize: 11, color: 'rgba(232,160,69,0.4)' }}>⬦</span>
-              <span className="font-mono text-[11px] truncate" style={{ color: 'rgba(232,160,69,0.5)' }}>
-                {parentBet.title}
-              </span>
-            </div>
-          )}
-          {!parentBet && (
-            <span className="font-mono text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
-              No bet assigned — parked task
+
+          {/* Parent bet selector */}
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[9px] tracking-widest shrink-0" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              BET
             </span>
-          )}
+            <select
+              value={betId}
+              onChange={e => handleBetChange(e.target.value)}
+              className="flex-1 bg-transparent font-mono text-xs outline-none cursor-pointer"
+              style={{
+                color: betId ? 'rgba(232,160,69,0.8)' : 'rgba(255,255,255,0.2)',
+                border: 'none',
+                appearance: 'none',
+              }}
+            >
+              <option value="" style={{ background: '#0d1822', color: 'rgba(255,255,255,0.4)' }}>
+                — No parent bet —
+              </option>
+              {bets.filter(b => b.status === 'active').map(b => (
+                <option key={b.id} value={b.id} style={{ background: '#0d1822', color: '#e8a045' }}>
+                  {b.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Reward */}
+          <div className="flex items-start gap-2">
+            <span className="shrink-0 text-sm" style={{ marginTop: 1 }}>🏆</span>
+            <textarea
+              rows={1}
+              value={reward}
+              onChange={e => setReward(e.target.value)}
+              onBlur={() => save({ reward: reward.trim() || undefined })}
+              placeholder="Reward if done..."
+              className="flex-1 bg-transparent resize-none outline-none font-mono text-xs"
+              style={{ color: 'rgba(255,255,255,0.65)', caretColor: '#e8a045', lineHeight: 1.5 }}
+              spellCheck={false}
+            />
+          </div>
+
+          {/* Consequence */}
+          <div className="flex items-start gap-2">
+            <span className="shrink-0 text-sm" style={{ marginTop: 1 }}>👊</span>
+            <textarea
+              rows={1}
+              value={consequence}
+              onChange={e => setConsequence(e.target.value)}
+              onBlur={() => save({ consequence: consequence.trim() || undefined })}
+              placeholder="Cost if skipped..."
+              className="flex-1 bg-transparent resize-none outline-none font-mono text-xs"
+              style={{ color: 'rgba(255,255,255,0.5)', caretColor: '#e05555', lineHeight: 1.5 }}
+              spellCheck={false}
+            />
+          </div>
         </div>
 
         {/* Right: Priority Score */}
@@ -252,39 +281,59 @@ function TaskCard({ taskId, onClose }: TaskCardProps) {
         {/* Left: Objectives + Notepad */}
         <div className="flex-1 flex flex-col overflow-hidden" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
 
-          {/* Objectives */}
+          {/* Objectives — checklist */}
           <div className="shrink-0 px-6 pt-5 pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <div className="font-mono text-[10px] tracking-widest mb-3" style={{ color: 'rgba(255,255,255,0.25)' }}>
               OBJECTIVES
             </div>
             <div className="flex flex-col gap-2">
-              {objectives.map((obj, i) => (
-                <div key={i} className="flex items-center gap-2 group">
-                  <span className="font-mono text-xs shrink-0" style={{ color: 'rgba(255,255,255,0.15)' }}>□</span>
-                  <input
-                    className="flex-1 bg-transparent outline-none font-mono text-xs"
-                    style={{ color: 'rgba(255,255,255,0.7)', caretColor: '#e8a045' }}
-                    placeholder={`Objective ${i + 1}`}
-                    value={obj}
-                    onChange={e => updateObjective(i, e.target.value)}
-                  />
-                  {objectives.length > 1 && (
+              {objectives.map((obj, i) => {
+                const done = objDone[i] ?? false
+                return (
+                  <div key={i} className="flex items-center gap-2 group">
+                    {/* Checkbox toggle */}
                     <button
-                      onClick={() => removeObjective(i)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity font-mono text-xs"
-                      style={{ color: 'rgba(255,255,255,0.2)' }}
-                      onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.2)')}
+                      onClick={() => toggleObjDone(i)}
+                      className="shrink-0 w-4 h-4 flex items-center justify-center transition-colors"
+                      style={{
+                        border: `1px solid ${done ? '#4ab8b0' : 'rgba(255,255,255,0.2)'}`,
+                        background: done ? 'rgba(74,184,176,0.15)' : 'transparent',
+                        color: done ? '#4ab8b0' : 'transparent',
+                        fontSize: 10,
+                        lineHeight: 1,
+                      }}
                     >
-                      ✕
+                      ✓
                     </button>
-                  )}
-                </div>
-              ))}
+                    <input
+                      className="flex-1 bg-transparent outline-none font-mono text-xs transition-all"
+                      style={{
+                        color: done ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.7)',
+                        textDecoration: done ? 'line-through' : 'none',
+                        caretColor: '#e8a045',
+                      }}
+                      placeholder={`Objective ${i + 1}`}
+                      value={obj}
+                      onChange={e => updateObjective(i, e.target.value)}
+                    />
+                    {objectives.length > 1 && (
+                      <button
+                        onClick={() => removeObjective(i)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity font-mono text-xs"
+                        style={{ color: 'rgba(255,255,255,0.2)' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.2)')}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
               <button
                 onClick={addObjective}
                 className="text-left font-mono text-[11px] transition-opacity"
-                style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 16 }}
+                style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 24 }}
                 onMouseEnter={e => (e.currentTarget.style.color = 'rgba(232,160,69,0.6)')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.2)')}
               >
