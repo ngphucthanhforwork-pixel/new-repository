@@ -3,13 +3,15 @@ import { useBetStore } from '@/store/useBetStore'
 import { useTaskStore } from '@/store/useTaskStore'
 import { useHabitStore } from '@/store/useHabitStore'
 import { useCampaignStore } from '@/store/useCampaignStore'
+import { useAppStore } from '@/store/useAppStore'
 import { computeChessRank, computeCumulativeScore, computeTaskCumulativeScore } from '@/lib/scoring'
 import { TaskView } from './TaskView'
 
 export function MissionPanel() {
-  const { panelOpen, selectedId, panelTaskId, deselect, openTaskView } = useBattlefieldStore()
+  const { panelOpen, selectedId, panelTaskId, deselect } = useBattlefieldStore()
   const { bets, updateBet, deleteBet, lockBet, unlockBet } = useBetStore()
   const { addToGrand } = useCampaignStore()
+  const { openTaskCard } = useAppStore()
   const { tasks } = useTaskStore()
   const { habits, completeHabit } = useHabitStore()
 
@@ -48,7 +50,7 @@ export function MissionPanel() {
             onClose={deselect}
             onUpdate={(data) => updateBet(bet.id, data)}
             onDelete={() => { deleteBet(bet.id); deselect() }}
-            onOpenTask={openTaskView}
+            onOpenTask={openTaskCard}
             onLock={() => lockBet(bet.id)}
             onUnlock={() => unlockBet(bet.id)}
             onAddToQueue={() => { addToGrand(bet.id) }}

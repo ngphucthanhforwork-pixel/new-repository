@@ -8,7 +8,7 @@ export function MicroQueue() {
   const { bets } = useBetStore()
   const { tasks, updateTask } = useTaskStore()
   const { grandQueue, microQueue, addToMicro, removeFromMicro, moveInMicro } = useCampaignStore()
-  const { setMode, setActiveTask } = useAppStore()
+  const { setMode, setActiveTask, openTaskCard } = useAppStore()
 
   // Tasks from bets in the grand queue that haven't been completed
   const eligibleTasks = tasks.filter(
@@ -73,7 +73,10 @@ export function MicroQueue() {
               >
                 <span className="text-white/20 font-mono text-[10px] w-4 text-right shrink-0">{i + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-mono text-white/80 truncate">{task.title}</div>
+                  <button
+                    onClick={() => openTaskCard(task.id)}
+                    className="text-xs font-mono text-white/80 truncate hover:text-amber/80 transition-colors text-left w-full"
+                  >{task.title}</button>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[9px] font-mono text-white/25">{task.estimated_time}m</span>
                     <span className="text-[9px] font-mono text-amber/40">{score.toFixed(3)}</span>
@@ -137,7 +140,10 @@ export function MicroQueue() {
                 className="flex items-center gap-2 px-3 py-1.5 border border-white/5 hover:border-white/10 group transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-mono text-white/50 truncate">{task.title}</div>
+                  <button
+                    onClick={() => openTaskCard(task.id)}
+                    className="text-xs font-mono text-white/50 truncate hover:text-amber/70 transition-colors text-left w-full"
+                  >{task.title}</button>
                   {bet && (
                     <div className="text-[9px] font-mono text-white/20 truncate mt-0.5">{bet.title}</div>
                   )}

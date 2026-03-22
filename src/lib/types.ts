@@ -26,6 +26,7 @@ export interface Task {
   unprocessed?: boolean      // captured without bet assignment
   queued_at?: string         // ISO timestamp, set when added to micro queue
   completed_at?: string      // ISO timestamp
+  notes?: string             // free-form notepad content
   createdAt: string
 }
 
