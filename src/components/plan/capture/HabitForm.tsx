@@ -10,10 +10,10 @@ interface HabitFormProps {
 }
 
 const RECURRENCE_PRESETS = [
-  { label: 'Daily', hours: 24 },
-  { label: '2× / week', hours: 84 },
-  { label: 'Weekly', hours: 168 },
-  { label: 'Custom', hours: 0 },
+  { label: 'Daily',    hours: 24  },
+  { label: '2×/week', hours: 84  },
+  { label: 'Weekly',  hours: 168 },
+  { label: 'Custom',  hours: 0   },
 ]
 
 export function HabitForm({ onDone, initialTitle = '' }: HabitFormProps) {
@@ -47,11 +47,28 @@ export function HabitForm({ onDone, initialTitle = '' }: HabitFormProps) {
     onDone()
   }
 
+  const sep = <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginLeft: -20, marginRight: -20 }} />
+
+  const toggleBtnStyle = (active: boolean, accent = '#e8a045'): React.CSSProperties => ({
+    flex: 1,
+    padding: '4px 8px',
+    fontFamily: 'inherit',
+    fontSize: 10,
+    letterSpacing: '0.1em',
+    border: `1px solid ${active ? `${accent}55` : 'rgba(255,255,255,0.08)'}`,
+    background: active ? `${accent}14` : 'transparent',
+    color: active ? accent : 'rgba(255,255,255,0.28)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+  })
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+
       <FormField label="Habit" required>
         <input
           className={inputClass}
+          style={{ caretColor: '#4ab8b8' }}
           placeholder="What do you want to repeat?"
           value={title}
           onChange={e => setTitle(e.target.value)}
@@ -59,64 +76,67 @@ export function HabitForm({ onDone, initialTitle = '' }: HabitFormProps) {
         />
       </FormField>
 
+      {sep}
+
       {/* Type toggle */}
       <FormField label="Type" hint={type === 'proactive' ? 'Builds capability. Belongs to a bet.' : 'Maintains a floor. Belongs to an area.'}>
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           {(['proactive', 'maintenance'] as const).map(t => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setType(t)}
-              className={`flex-1 py-1.5 text-xs font-mono tracking-widest border transition-colors ${
-                type === t
-                  ? 'border-amber/50 bg-amber/10 text-amber'
-                  : 'border-white/10 text-white/30 hover:text-white/60'
-              }`}
-            >
+            <button key={t} type="button" onClick={() => setType(t)} style={toggleBtnStyle(type === t, '#4ab8b8')}>
               {t.toUpperCase()}
             </button>
           ))}
         </div>
       </FormField>
 
+      {sep}
+
       {/* Park toggle */}
-      <label className="flex items-center gap-3 cursor-pointer">
+      <button type="button" onClick={() => setPark(p => !p)} className="flex items-center gap-3 text-left">
         <div
-          onClick={() => setPark(p => !p)}
-          className={`w-8 h-4 rounded-full transition-colors ${park ? 'bg-amber/60' : 'bg-white/10'}`}
+          className="relative shrink-0 transition-colors"
+          style={{ width: 28, height: 14, borderRadius: 7, background: park ? 'rgba(74,184,184,0.5)' : 'rgba(255,255,255,0.1)' }}
         >
-          <div className={`w-3 h-3 mt-0.5 ml-0.5 rounded-full bg-white transition-transform ${park ? 'translate-x-4' : ''}`} />
+          <div
+            className="absolute top-0.5 left-0.5 rounded-full bg-white transition-transform"
+            style={{ width: 11, height: 11, transform: park ? 'translateX(14px)' : 'none' }}
+          />
         </div>
-        <span className="text-xs font-mono text-white/40">Park for later (no parent yet)</span>
-      </label>
+        <span className="font-mono" style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>
+          Park for later (no parent yet)
+        </span>
+      </button>
 
       {!park && (
         <FormField label={type === 'proactive' ? 'Parent Bet' : 'Area'}>
           <select
             className={inputClass}
+            style={{
+              caretColor: '#4ab8b8', appearance: 'none', cursor: 'pointer',
+              color: parentId ? 'rgba(232,160,69,0.8)' : 'rgba(255,255,255,0.25)',
+            }}
             value={parentId}
             onChange={e => setParentId(e.target.value)}
           >
-            <option value="">— Select parent</option>
+            <option value="" style={{ background: '#0d1525', color: 'rgba(255,255,255,0.4)' }}>— Select parent</option>
             {activeBets.map(b => (
-              <option key={b.id} value={b.id}>{b.title}</option>
+              <option key={b.id} value={b.id} style={{ background: '#0d1525', color: '#e8a045' }}>{b.title}</option>
             ))}
           </select>
         </FormField>
       )}
 
+      {sep}
+
+      {/* Recurrence */}
       <FormField label="Recurrence">
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-1 flex-wrap">
           {RECURRENCE_PRESETS.map(p => (
             <button
               key={p.label}
               type="button"
               onClick={() => setRecurrencePreset(p.hours)}
-              className={`px-3 py-1 text-xs font-mono border transition-colors ${
-                recurrencePreset === p.hours
-                  ? 'border-amber/50 bg-amber/10 text-amber'
-                  : 'border-white/10 text-white/30 hover:text-white/60'
-              }`}
+              style={toggleBtnStyle(recurrencePreset === p.hours, '#4ab8b8')}
             >
               {p.label}
             </button>
@@ -127,17 +147,19 @@ export function HabitForm({ onDone, initialTitle = '' }: HabitFormProps) {
             <input
               type="number"
               min={1}
-              className={inputClass + ' w-24'}
+              className={inputClass}
+              style={{ caretColor: '#4ab8b8', width: 72 }}
               value={customHours}
               onChange={e => setCustomHours(parseInt(e.target.value) || 24)}
             />
-            <span className="text-xs font-mono text-white/30">hours</span>
+            <span className="font-mono text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>hours</span>
           </div>
         )}
       </FormField>
 
       {type === 'proactive' && (
         <>
+          {sep}
           <ScoreSlider label="Certainty" value={certainty} onChange={setCertainty} />
           <ScoreSlider label="Intrinsic Impact" value={intrinsicImpact} onChange={setIntrinsicImpact} />
         </>
@@ -146,8 +168,14 @@ export function HabitForm({ onDone, initialTitle = '' }: HabitFormProps) {
       <button
         type="submit"
         disabled={!title.trim()}
-        className="mt-2 w-full py-2 text-xs font-mono tracking-widest bg-teal/10 border border-teal/30
-          text-teal hover:bg-teal/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="mt-1 w-full py-2.5 font-mono text-xs tracking-widest transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
+        style={{
+          background: 'rgba(74,184,184,0.07)',
+          border: '1px solid rgba(74,184,184,0.3)',
+          color: '#4ab8b8',
+        }}
+        onMouseEnter={e => { if (title.trim()) e.currentTarget.style.background = 'rgba(74,184,184,0.16)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(74,184,184,0.07)' }}
       >
         {park ? 'PARK HABIT' : 'ADD HABIT'}
       </button>

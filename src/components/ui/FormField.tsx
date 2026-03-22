@@ -1,26 +1,48 @@
+import type { ReactNode } from 'react'
+
+// ─── Shared input styles ──────────────────────────────────────────────────────
+
+export const inputClass =
+  'w-full bg-transparent border-b font-mono text-xs text-white/80 placeholder-white/18 ' +
+  'outline-none py-2 transition-colors ' +
+  'focus:placeholder-white/10 ' +
+  '[border-bottom-color:rgba(255,255,255,0.1)] [&:focus]:[border-bottom-color:rgba(232,160,69,0.45)]'
+
+export const inputStyle: React.CSSProperties = {
+  caretColor: '#e8a045',
+  borderBottom: '1px solid rgba(255,255,255,0.1)',
+}
+
+export const textareaClass =
+  'w-full bg-transparent font-mono text-xs text-white/80 placeholder-white/18 ' +
+  'outline-none py-2 resize-none transition-colors leading-relaxed ' +
+  '[border-bottom-color:rgba(255,255,255,0.1)] [&:focus]:[border-bottom-color:rgba(232,160,69,0.45)]'
+
+// ─── FormField ────────────────────────────────────────────────────────────────
+
 interface FormFieldProps {
   label: string
   required?: boolean
-  children: React.ReactNode
+  children: ReactNode
   hint?: string
 }
 
 export function FormField({ label, required, children, hint }: FormFieldProps) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-mono text-white/50 tracking-widest uppercase">
+    <div className="flex flex-col gap-2">
+      <label
+        className="font-mono tracking-widest uppercase"
+        style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)' }}
+      >
         {label}
-        {required && <span className="text-amber ml-1">*</span>}
+        {required && <span style={{ color: '#e8a045', marginLeft: 4 }}>*</span>}
       </label>
       {children}
-      {hint && <p className="text-xs font-mono text-white/25">{hint}</p>}
+      {hint && (
+        <p className="font-mono" style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', lineHeight: 1.5 }}>
+          {hint}
+        </p>
+      )}
     </div>
   )
 }
-
-export const inputClass =
-  'w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm font-mono text-white ' +
-  'placeholder-white/20 outline-none focus:border-amber/50 transition-colors'
-
-export const textareaClass =
-  inputClass + ' resize-none'

@@ -42,11 +42,15 @@ export function AreaForm({ onDone }: AreaFormProps) {
     onDone()
   }
 
+  const sep = <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginLeft: -20, marginRight: -20 }} />
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+
       <FormField label="Area" required hint="A non-bet floor — minimum standards to maintain.">
         <input
           className={inputClass}
+          style={{ caretColor: 'rgba(255,255,255,0.5)' }}
           placeholder="e.g. Health, Sleep, Finance"
           value={title}
           onChange={e => setTitle(e.target.value)}
@@ -54,11 +58,13 @@ export function AreaForm({ onDone }: AreaFormProps) {
         />
       </FormField>
 
-      <FormField label="Description">
+      {sep}
+
+      <FormField label="Description" hint="What does maintaining this area look like?">
         <textarea
           className={textareaClass}
-          rows={3}
-          placeholder="What does maintaining this area look like?"
+          style={{ caretColor: 'rgba(255,255,255,0.5)', minHeight: 72 }}
+          placeholder="Minimum standards, non-negotiables..."
           value={description}
           onChange={e => setDescription(e.target.value)}
         />
@@ -67,8 +73,14 @@ export function AreaForm({ onDone }: AreaFormProps) {
       <button
         type="submit"
         disabled={!title.trim()}
-        className="mt-2 w-full py-2 text-xs font-mono tracking-widest bg-white/5 border border-white/15
-          text-white/60 hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="mt-1 w-full py-2.5 font-mono text-xs tracking-widest transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
+        style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          color: 'rgba(255,255,255,0.5)',
+        }}
+        onMouseEnter={e => { if (title.trim()) e.currentTarget.style.background = 'rgba(255,255,255,0.09)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
       >
         ADD AREA
       </button>

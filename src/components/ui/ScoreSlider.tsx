@@ -7,10 +7,17 @@ interface ScoreSliderProps {
 
 export function ScoreSlider({ label, value, onChange, hint }: ScoreSliderProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <div className="flex justify-between items-baseline">
-        <label className="text-xs font-mono text-white/50 tracking-widest uppercase">{label}</label>
-        <span className="text-xs font-mono text-amber tabular-nums">{value.toFixed(2)}</span>
+        <label
+          className="font-mono tracking-widest uppercase"
+          style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)' }}
+        >
+          {label}
+        </label>
+        <span className="font-mono text-xs tabular-nums" style={{ color: '#e8a045' }}>
+          {value.toFixed(2)}
+        </span>
       </div>
       <input
         type="range"
@@ -19,11 +26,14 @@ export function ScoreSlider({ label, value, onChange, hint }: ScoreSliderProps) 
         step={0.01}
         value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
-        className="w-full h-1 appearance-none bg-white/10 rounded-full outline-none cursor-pointer
-          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
-          [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber"
+        className="w-full h-px appearance-none outline-none cursor-pointer"
+        style={{ background: `linear-gradient(to right, rgba(232,160,69,0.7) ${value * 100}%, rgba(255,255,255,0.1) ${value * 100}%)` }}
       />
-      {hint && <p className="text-xs font-mono text-white/25">{hint}</p>}
+      {hint && (
+        <p className="font-mono" style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', lineHeight: 1.5 }}>
+          {hint}
+        </p>
+      )}
     </div>
   )
 }

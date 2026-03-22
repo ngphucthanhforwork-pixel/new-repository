@@ -34,11 +34,15 @@ export function BetForm({ onDone, initialTitle = '' }: BetFormProps) {
     onDone()
   }
 
+  const sep = <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginLeft: -20, marginRight: -20 }} />
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+
       <FormField label="Hypothesis" required>
         <input
           className={inputClass}
+          style={{ caretColor: '#e8a045' }}
           placeholder="I believe doing X will create outcome Y..."
           value={title}
           onChange={e => setTitle(e.target.value)}
@@ -46,10 +50,12 @@ export function BetForm({ onDone, initialTitle = '' }: BetFormProps) {
         />
       </FormField>
 
+      {sep}
+
       <FormField label="🏆 Reward" hint="The feeling or outcome you're betting on.">
         <textarea
           className={textareaClass}
-          rows={2}
+          style={{ caretColor: '#e8a045', minHeight: 56 }}
           placeholder="What does winning feel like?"
           value={reward}
           onChange={e => setReward(e.target.value)}
@@ -59,12 +65,14 @@ export function BetForm({ onDone, initialTitle = '' }: BetFormProps) {
       <FormField label="✊ If Not" hint="What happens if you don't do this?">
         <textarea
           className={textareaClass}
-          rows={2}
+          style={{ caretColor: '#e05555', minHeight: 56 }}
           placeholder="What do you lose by not acting?"
           value={consequence}
           onChange={e => setConsequence(e.target.value)}
         />
       </FormField>
+
+      {sep}
 
       <ScoreSlider
         label="Certainty"
@@ -81,25 +89,40 @@ export function BetForm({ onDone, initialTitle = '' }: BetFormProps) {
       />
 
       {activeBets.length > 0 && (
-        <FormField label="Parent Bet" hint="Leave empty to make this a root bet (King).">
-          <select
-            className={inputClass}
-            value={parentBetId}
-            onChange={e => setParentBetId(e.target.value)}
-          >
-            <option value="">— Root bet (♚ King)</option>
-            {activeBets.map(b => (
-              <option key={b.id} value={b.id}>{b.title}</option>
-            ))}
-          </select>
-        </FormField>
+        <>
+          {sep}
+          <FormField label="Parent Goal" hint="Leave empty to make this a root bet (King).">
+            <select
+              className={inputClass}
+              style={{ caretColor: '#e8a045', appearance: 'none', cursor: 'pointer',
+                color: parentBetId ? 'rgba(232,160,69,0.8)' : 'rgba(255,255,255,0.25)' }}
+              value={parentBetId}
+              onChange={e => setParentBetId(e.target.value)}
+            >
+              <option value="" style={{ background: '#0d1525', color: 'rgba(255,255,255,0.4)' }}>
+                ♚ Root goal (no parent)
+              </option>
+              {activeBets.map(b => (
+                <option key={b.id} value={b.id} style={{ background: '#0d1525', color: '#e8a045' }}>
+                  {b.title}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        </>
       )}
 
       <button
         type="submit"
         disabled={!title.trim()}
-        className="mt-2 w-full py-2 text-xs font-mono tracking-widest bg-amber/10 border border-amber/30
-          text-amber hover:bg-amber/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="mt-1 w-full py-2.5 font-mono text-xs tracking-widest transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
+        style={{
+          background: 'rgba(232,160,69,0.08)',
+          border: '1px solid rgba(232,160,69,0.3)',
+          color: '#e8a045',
+        }}
+        onMouseEnter={e => { if (title.trim()) e.currentTarget.style.background = 'rgba(232,160,69,0.18)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(232,160,69,0.08)' }}
       >
         PLACE BET
       </button>
