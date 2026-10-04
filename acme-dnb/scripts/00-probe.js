@@ -69,7 +69,7 @@
   out.by_keyword = Object.fromEntries(KEYS.map(k => [k, out.endpoints.filter(e => e.toLowerCase().includes(k))]).filter(([, v]) => v.length));
 
   // 3. Thử GET các endpoint liệt kê (không tham số động) để xem cấu trúc dữ liệu
-  const listy = out.endpoints.filter(e => /(list|load|all|get|index|me)\b|\/(services|users|groups|workspaces)$/i.test(e) && !/[{$]/.test(e)).slice(0, 25);
+  const listy = out.endpoints.filter(e => /(list|load|all|get|index|me)\b|\/(services|users|groups|workspaces)$/i.test(e) && !/[{$]/.test(e) && !/(save|update|create|delete|remove|add|set|approve|reject|submit|upload)/i.test(e)).slice(0, 25);
   for (const p of listy) {
     const r = await tryGet(p);
     out.gets[p] = r.status === 200 ? { status: 200, shape: shrink(r.body) } : (r.status ?? r.error);
